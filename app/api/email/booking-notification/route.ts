@@ -181,6 +181,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get origin for CORS headers
+    const origin = request.headers.get("origin")
+    const allowedOrigins = [
+      "https://lastrada-eg.com",
+      "https://www.lastrada-eg.com",
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ]
+    const responseOrigin = origin && allowedOrigins.includes(origin) ? origin : null
+
     return NextResponse.json({ 
       success: true,
       customer_email_sent: customerEmailResult.success,
@@ -189,6 +199,11 @@ export async function POST(request: NextRequest) {
       remaining_requests: rateLimitResult.remaining,
     }, {
       headers: {
+        ...(responseOrigin ? {
+          "Access-Control-Allow-Origin": responseOrigin,
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        } : {}),
         "X-RateLimit-Limit": "5",
         "X-RateLimit-Remaining": String(rateLimitResult.remaining),
         "X-RateLimit-Reset": String(rateLimitResult.resetTime)
@@ -196,7 +211,25 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error sending booking notifications:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    
+    // Get origin for CORS on error response too
+    const origin = request.headers.get("origin")
+    const allowedOrigins = [
+      "https://lastrada-eg.com",
+      "https://www.lastrada-eg.com",
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ]
+    const responseOrigin = origin && allowedOrigins.includes(origin) ? origin : null
+
+    return NextResponse.json({ error: "Internal server error" }, { 
+      status: 500,
+      headers: responseOrigin ? {
+        "Access-Control-Allow-Origin": responseOrigin,
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      } : {}
+    })
   }
 }
 
