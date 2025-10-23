@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
           location: `${booking.areas?.area_en || 'Area'} - ${booking.location || booking.address}`,
         },
         notes_html: notesHtml,
-        dashboard_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://dashboard.lastrada-eg.com"}/dashboard`,
+        dashboard_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://internal.lastrada-eg.com"}`,
       }
 
       // Send emails to all managers
