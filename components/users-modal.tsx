@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
 import { Users, Plus, Loader2 } from "lucide-react"
 
 interface User {
   id: string
   email: string
+  send_email: boolean
   created_at: string
 }
 
@@ -129,6 +131,36 @@ export function UsersModal() {
     }
   }
 
+  const handleToggleEmailNotifications = async (userId: string, currentValue: boolean) => {
+    try {
+      const response = await fetch("/api/users/update-email-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          sendEmail: !currentValue,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update email preference")
+      }
+
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, send_email: !currentValue }
+          : user
+      ))
+      
+      setSuccess("Email notification preference updated")
+      setTimeout(() => setSuccess(""), 3000)
+    } catch (err: any) {
+      setError(err.message)
+      setTimeout(() => setError(""), 3000)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -189,11 +221,23 @@ export function UsersModal() {
                   {users.map((user) => (
                     <Card key={user.id} className="p-4">
                       <div className="flex justify-between items-center">
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{user.email}</p>
                           <p className="text-sm text-muted-foreground">
                             Created: {new Date(user.created_at).toLocaleDateString()}
                           </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`email-${user.id}`} className="text-sm cursor-pointer">
+                              Receive emails
+                            </Label>
+                            <Switch
+                              id={`email-${user.id}`}
+                              checked={user.send_email}
+                              onCheckedChange={() => handleToggleEmailNotifications(user.id, user.send_email)}
+                            />
+                          </div>
                         </div>
                       </div>
                     </Card>

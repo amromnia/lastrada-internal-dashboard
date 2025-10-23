@@ -133,6 +133,21 @@ export default function DashboardPage() {
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
+
+      // Send confirmation email
+      try {
+        const emailResponse = await fetch("/api/email/send-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId }),
+        })
+        
+        if (!emailResponse.ok) {
+          console.error("Failed to send confirmation email")
+        }
+      } catch (emailErr) {
+        console.error("Error sending confirmation email:", emailErr)
+      }
     } catch (err) {
       console.error("Error confirming booking:", err)
     } finally {
