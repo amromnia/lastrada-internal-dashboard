@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isTokenExpired } from "@/lib/auth"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get("auth_token")?.value
   const isValid = token && !isTokenExpired(token)
 
