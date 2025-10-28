@@ -73,9 +73,8 @@ export function CreateBookingDialog({ open, onOpenChange, onBookingCreated }: Cr
     onOpenChange(false);
   };
 
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>

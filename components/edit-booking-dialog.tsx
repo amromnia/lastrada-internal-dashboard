@@ -16,6 +16,38 @@ interface EditBookingDialogProps {
   onBookingEdited: (booking: any) => void;
 }
 
+const convertBookingToBookingData = (booking: Booking): BookingData => {
+  return {
+    fullName: booking.full_name,
+    phone: booking.phone_number,
+    eventDate: booking.event_date,
+    servingTime: booking.serving_time,
+    readyTime: booking.ready_time,
+    address: booking.address,
+    location: booking.location,
+    area: booking.area_id.toString(),
+    eventType: booking.event_type_id.toString(),
+    allowFilming: booking.is_filming,
+    email: booking.email,
+    comment: booking.comment || undefined,
+    downpaymentUrl: booking.downpayment_screenshot
+  }
+}
+
+
+const convertBookingToPackageData = (booking: Booking): PackageData => {
+  return {
+    packageType: {
+      id: booking.booking_package![0].package_id,
+      name: booking.booking_package![0].packages.name as PackageType
+    },
+    guests: booking.booking_package![0].num_guests || undefined,
+    classicPizzas: booking.booking_package![0].num_classic_pizzas || undefined,
+    signaturePizzas: booking.booking_package![0].num_signature_pizzas || undefined,
+    subtotal: booking.booking_package![0].sub_total
+  }
+}
+
 export function EditBookingDialog({ bookingId, open, bookingData, onOpenChange, onBookingEdited }: EditBookingDialogProps) {
   const [step, setStep] = useState<'package' | 'details' | 'confirmation'>('package');
   const [editedPackageData, setEditedPackageData] = useState<PackageData>();
@@ -76,39 +108,6 @@ export function EditBookingDialog({ bookingId, open, bookingData, onOpenChange, 
     onOpenChange(false);
   };
 
-  const convertBookingToBookingData = (booking: Booking): BookingData => {
-    return {
-      fullName: booking.full_name,
-      phone: booking.phone_number,
-      eventDate: booking.event_date,
-      servingTime: booking.serving_time,
-      readyTime: booking.ready_time,
-      address: booking.address,
-      location: booking.location,
-      area: booking.area_id.toString(),
-      eventType: booking.event_type_id.toString(),
-      allowFilming: booking.is_filming,
-      email: booking.email,
-      comment: booking.comment || undefined,
-      downpaymentUrl: booking.downpayment_screenshot
-    }
-  }
-
-
-  const convertBookingToPackageData = (booking: Booking): PackageData => {
-    return {
-      packageType: {
-        id: booking.booking_package![0].package_id,
-        name: booking.booking_package![0].packages.name as PackageType
-      },
-      guests: booking.booking_package![0].num_guests || undefined,
-      classicPizzas: booking.booking_package![0].num_classic_pizzas || undefined,
-      signaturePizzas: booking.booking_package![0].num_signature_pizzas || undefined,
-      subtotal: booking.booking_package![0].sub_total
-    }
-  }
-
-
   useEffect(() => {
     console.log("🚀 ~ EditBookingDialog ~ bookingData:", bookingData)
     const frontendPackageData = convertBookingToPackageData(bookingData)
@@ -121,7 +120,7 @@ export function EditBookingDialog({ bookingId, open, bookingData, onOpenChange, 
 
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>
