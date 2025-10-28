@@ -311,7 +311,7 @@ export function BookingDetailsStep({ packageData, bookingData, onSubmit, onBack,
         <Input
           id="downpayment"
           type="file"
-          accept="image/*"
+          accept="image/jpeg, image/png, image/jpg"
           onChange={(e) => setImageFile(e.target.files?.[0] || null)}
           className="mt-2 "
         />
