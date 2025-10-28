@@ -105,7 +105,7 @@ export function BookingDetailsStep({ packageData, bookingData, onSubmit, onBack,
       return;
     }
 
-    let downpaymentUrl = null;
+    let downpaymentUrl = bookingData?.downpaymentUrl || null;
     if (imageFile) {
       downpaymentUrl = await uploadDownpayment(imageFile);
       if (!downpaymentUrl) {
