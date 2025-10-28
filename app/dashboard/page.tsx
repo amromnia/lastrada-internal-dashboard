@@ -16,6 +16,7 @@ import { SearchModal } from "@/components/search-modal"
 import type { Booking } from "@/types/booking"
 import { CreateBookingDialog } from "@/components/create-booking-dialog"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { EditBookingDialog } from "@/components/edit-booking-dialog"
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [dateBookings, setDateBookings] = useState<Booking[] | null>(null)
   const [showRejected, setShowRejected] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true)
   const [refetching, setRefetching] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -192,6 +194,14 @@ export default function DashboardPage() {
     setSelectedBooking(newBooking);
   };
 
+  const toggleEditBookingDialog = () => setEditDialogOpen((prev) => !prev);
+
+  const handleBookingEdited = (editedBooking: Booking) => {
+    console.log("🚀 ~ handleBookingEdited ~ editedBooking:", editedBooking)
+    setBookings((prev) => prev.map((booking) => (booking.id === editedBooking.id ? editedBooking : booking)));
+    setSelectedBooking(editedBooking);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -289,6 +299,7 @@ export default function DashboardPage() {
                 <BookingDetails
                   booking={selectedBooking}
                   onConfirm={() => handleConfirmBooking(selectedBooking.id)}
+                  onEdit={toggleEditBookingDialog}
                   onDeny={() => handleDenyBooking(selectedBooking.id)}
                   onBack={dateBookings ? handleBack : undefined}
                   isLoading={actionLoading}
@@ -317,6 +328,7 @@ export default function DashboardPage() {
         onOpenChange={setCreateDialogOpen}
         onBookingCreated={handleBookingCreated}
       />
+      {selectedBooking && <EditBookingDialog bookingId={selectedBooking.id} open={editDialogOpen} onOpenChange={toggleEditBookingDialog} onBookingEdited={handleBookingEdited} bookingData={selectedBooking} />}
     </div>
   )
 }

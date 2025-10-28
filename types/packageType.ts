@@ -1,0 +1,1 @@
+export type PackageType = 'full experience' | 'live setup';

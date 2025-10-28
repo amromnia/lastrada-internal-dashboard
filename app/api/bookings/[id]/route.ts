@@ -1,57 +1,9 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { getDb } from "@/lib/db"
 import { verifyToken } from "@/lib/auth-server"
+import { getDb } from "@/lib/db"
 import { Booking } from "@/types/booking"
+import { NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest) {
-  try {
-    const token = request.headers.get("cookie")?.split("auth_token=")[1]?.split(";")[0]
-
-    if (!token || !verifyToken(token)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const url = new URL(request.url)
-    const showRejected = url.searchParams.get("showRejected") === "true"
-
-    const supabase = await getDb()
-    let query = supabase
-      .from("bookings")
-      .select(
-        `
-        *,
-        areas (area_en, area_ar),
-        event_types (event_en, event_ar),
-        booking_package (
-          id,
-          package_id,
-          num_guests,
-          num_classic_pizzas,
-          num_signature_pizzas,
-          sub_total,
-          packages (id, name)
-        )
-      `,
-      )
-      .order("event_date", { ascending: true })
-
-    // Filter out rejected bookings unless showRejected is true
-    if (!showRejected) {
-      query = query.or("is_confirmed.is.null,is_confirmed.eq.true")
-    }
-
-    const { data: bookings, error } = await query
-
-    if (error) throw error
-
-    return NextResponse.json({ bookings })
-  } catch (error) {
-    console.error("Error fetching bookings:", error)
-    return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const token = request.headers.get("cookie")?.split("auth_token=")[1]?.split(";")[0]
 
@@ -68,7 +20,28 @@ export async function POST(request: NextRequest) {
     const userId = decoded.userId
 
     const body = await request.json();
-    console.log("🚀 ~ POST ~ body:", body)
+    const { id } = await params
+
+    const supabase = await getDb()
+
+    const { data: booking, error }: { data: Booking | null, error: any } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+
+
+    if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json({ error: "Booking not found" }, { status: 404 })
+      }
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    }
+
+
+    if (booking?.is_confirmed === false) {
+      return NextResponse.json({ error: "Booking is rejected and cannot be updated" }, { status: 409 })
+    }
 
     // Transform frontend data to database format
     const dbBooking = {
@@ -93,8 +66,6 @@ export async function POST(request: NextRequest) {
     };
     console.log("🚀 ~ POST ~ dbBooking:", dbBooking)
 
-    const supabase = await getDb()
-
 
     if (!dbBooking.package_id) {
       return NextResponse.json({ error: "Please select a package" }, { status: 400 });
@@ -102,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error: bookingError } = await supabase
       .from("bookings")
-      .insert({
+      .update({
         full_name: dbBooking?.full_name,
         email: dbBooking?.email,
         phone_number: dbBooking?.phone_number,
@@ -118,18 +89,18 @@ export async function POST(request: NextRequest) {
         downpayment_screenshot: dbBooking.downpayment_screenshot,
         added_by: userId
       })
+      .eq("id", id)
       .select("*, areas (area_en, area_ar), event_types (event_en, event_ar)").single();
 
     if (bookingError) throw bookingError;
 
-    const { data: bookingPackageData, error: bookingPackageError } = await supabase.from("booking_package").insert({
-      booking_id: data?.id,
+    const { data: bookingPackageData, error: bookingPackageError } = await supabase.from("booking_package").update({
       package_id: dbBooking?.package_id,
       num_guests: dbBooking?.num_guests || null,
       num_classic_pizzas: dbBooking?.num_classic_pizzas || null,
       num_signature_pizzas: dbBooking?.num_signature_pizzas || null,
       sub_total: dbBooking?.sub_total || null,
-    }).select("*, packages (id, name)").single();
+    }).eq("booking_id", id).select("*, packages (id, name)").single();
 
 
     if (bookingPackageError) throw bookingPackageError
