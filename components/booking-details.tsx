@@ -8,6 +8,7 @@ import { CheckCircle2, XCircle, ArrowLeft, Edit } from "lucide-react"
 import { ImageModal } from "@/components/image-modal"
 import { formatMoney, formatTimeToAMPM } from "@/lib/utils"
 import type { Booking } from "@/types/booking"
+import { TActionLoading } from "@/app/dashboard/page"
 
 interface BookingDetailsProps {
   booking: Booking
@@ -15,10 +16,10 @@ interface BookingDetailsProps {
   onEdit: () => void
   onDeny: () => void
   onBack?: () => void
-  isLoading?: boolean
+  isLoading?: TActionLoading
 }
 
-export function BookingDetails({ booking, onConfirm, onEdit, onDeny, onBack, isLoading = false }: BookingDetailsProps) {
+export function BookingDetails({ booking, onConfirm, onEdit, onDeny, onBack, isLoading = 'idle' }: BookingDetailsProps) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const eventDate = new Date(booking.event_date)
   const formattedDate = eventDate.toLocaleDateString("en-US", {
@@ -161,13 +162,13 @@ export function BookingDetails({ booking, onConfirm, onEdit, onDeny, onBack, isL
 
         {booking.is_confirmed === null && (
           <div className="flex gap-2 pt-4">
-            <Button onClick={onConfirm} className="flex-1" size="sm" disabled={isLoading}>
+            <Button onClick={onConfirm} className="flex-1" size="sm" disabled={isLoading !== 'idle'}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              {isLoading ? "Confirming..." : "Confirm"}
+              {isLoading === 'confirm' ? "Confirming..." : "Confirm"}
             </Button>
-            <Button onClick={onDeny} variant="destructive" className="flex-1" size="sm" disabled={isLoading}>
+            <Button onClick={onDeny} variant="destructive" className="flex-1" size="sm" disabled={isLoading !== 'idle'}>
               <XCircle className="w-4 h-4 mr-2" />
-              {isLoading ? "Rejecting..." : "Deny"}
+              {isLoading === 'deny' ? "Rejecting..." : "Deny"}
             </Button>
           </div>
         )}

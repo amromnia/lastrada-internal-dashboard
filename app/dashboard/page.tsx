@@ -18,6 +18,8 @@ import { CreateBookingDialog } from "@/components/create-booking-dialog"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { EditBookingDialog } from "@/components/edit-booking-dialog"
 
+export type TActionLoading = 'idle' | 'confirm' | 'deny'
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
@@ -27,7 +29,7 @@ export default function DashboardPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true)
   const [refetching, setRefetching] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState<TActionLoading>('idle')
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const detailsRef = useRef<HTMLDivElement>(null)
@@ -127,7 +129,7 @@ export default function DashboardPage() {
   }
 
   const handleConfirmBooking = async (bookingId: string | number) => {
-    setActionLoading(true)
+    setActionLoading('confirm')
     try {
       const response = await fetch(`/api/bookings/${bookingId}/confirm`, { method: "POST" })
       if (!response.ok) throw new Error("Failed to confirm booking")
@@ -158,12 +160,12 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Error confirming booking:", err)
     } finally {
-      setActionLoading(false)
+      setActionLoading('idle')
     }
   }
 
   const handleDenyBooking = async (bookingId: string | number) => {
-    setActionLoading(true)
+    setActionLoading('deny')
     try {
       const response = await fetch(`/api/bookings/${bookingId}/deny`, { method: "POST" })
       if (!response.ok) throw new Error("Failed to deny booking")
@@ -184,7 +186,7 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Error denying booking:", err)
     } finally {
-      setActionLoading(false)
+      setActionLoading('idle')
     }
   }
 
