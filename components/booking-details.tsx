@@ -49,7 +49,7 @@ export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading =
           <Badge 
             variant={
               booking.is_confirmed === true 
-                ? "default" 
+                ? "success" 
                 : booking.is_confirmed === false 
                 ? "destructive" 
                 : "secondary"
