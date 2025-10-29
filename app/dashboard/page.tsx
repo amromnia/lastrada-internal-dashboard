@@ -127,12 +127,16 @@ export default function DashboardPage() {
 
       const updatedBookings = bookings.map((b) => (b.id === bookingId ? { ...b, is_confirmed: true } : b))
       setBookings(updatedBookings)
-      
+
       // Re-select the updated booking
       const updatedBooking = updatedBookings.find((b) => b.id === bookingId)
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
+
+
+      const updatedDateBookings = dateBookings?.map((b) => (b.id === bookingId ? { ...b, is_confirmed: true } : b))
+      updatedDateBookings && setDateBookings(updatedDateBookings)
 
       // Send confirmation email
       try {
@@ -141,7 +145,7 @@ export default function DashboardPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bookingId }),
         })
-        
+
         if (!emailResponse.ok) {
           console.error("Failed to send confirmation email")
         }
@@ -163,13 +167,21 @@ export default function DashboardPage() {
 
       const updatedBookings = bookings.map((b) => (b.id === bookingId ? { ...b, is_confirmed: false } : b))
       setBookings(updatedBookings)
-      
+
       // Re-select the updated booking
       const updatedBooking = updatedBookings.find((b) => b.id === bookingId)
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
-      
+
+      let updatedDateBookings = null
+      if (!showRejected) {
+        updatedDateBookings = dateBookings?.filter((b) => b.id !== bookingId)
+      } else {
+        updatedDateBookings = dateBookings?.map((b) => (b.id === bookingId ? { ...b, is_confirmed: false } : b))
+      }
+      updatedDateBookings && setDateBookings(updatedDateBookings)
+
       // If not showing rejected, refetch to remove it from view
       if (!showRejected) {
         setTimeout(() => fetchBookings(true), 500)
@@ -195,10 +207,10 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Image 
-                src="/logo.png" 
-                alt="Lastrada Logo" 
-                width={48} 
+              <Image
+                src="/logo.png"
+                alt="Lastrada Logo"
+                width={48}
                 height={48}
                 className="object-contain"
                 priority
@@ -251,49 +263,49 @@ export default function DashboardPage() {
             </div>
           )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Calendar</CardTitle>
-                <CardDescription>Click on a date to view bookings for that day</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BookingCalendar 
-                  bookings={bookings} 
-                  onSelectBooking={handleSelectBooking}
-                  onSelectDate={handleSelectDate}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          <div ref={detailsRef}>
-            {selectedBooking ? (
-              <BookingDetails
-                booking={selectedBooking}
-                onConfirm={() => handleConfirmBooking(selectedBooking.id)}
-                onDeny={() => handleDenyBooking(selectedBooking.id)}
-                onBack={dateBookings ? handleBack : undefined}
-                isLoading={actionLoading}
-              />
-            ) : dateBookings ? (
-              <BookingList 
-                bookings={dateBookings}
-                onSelectBooking={handleSelectBooking}
-              />
-            ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Booking Details</CardTitle>
+                  <CardTitle>Booking Calendar</CardTitle>
+                  <CardDescription>Click on a date to view bookings for that day</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Select a booking from the calendar to view details</p>
+                  <BookingCalendar
+                    bookings={bookings}
+                    onSelectBooking={handleSelectBooking}
+                    onSelectDate={handleSelectDate}
+                  />
                 </CardContent>
               </Card>
-            )}
+            </div>
+
+            <div ref={detailsRef}>
+              {selectedBooking ? (
+                <BookingDetails
+                  booking={selectedBooking}
+                  onConfirm={() => handleConfirmBooking(selectedBooking.id)}
+                  onDeny={() => handleDenyBooking(selectedBooking.id)}
+                  onBack={dateBookings ? handleBack : undefined}
+                  isLoading={actionLoading}
+                />
+              ) : dateBookings ? (
+                <BookingList
+                  bookings={dateBookings}
+                  onSelectBooking={handleSelectBooking}
+                />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Booking Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Select a booking from the calendar to view details</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>
