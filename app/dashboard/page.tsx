@@ -139,6 +139,10 @@ export default function DashboardPage() {
         setSelectedBooking(updatedBooking)
       }
 
+
+      const updatedDateBookings = dateBookings?.map((b) => (b.id === bookingId ? { ...b, is_confirmed: true } : b))
+      updatedDateBookings && setDateBookings(updatedDateBookings)
+
       // Send confirmation email
       try {
         const emailResponse = await fetch("/api/email/send-confirmation", {
@@ -174,6 +178,14 @@ export default function DashboardPage() {
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
+      
+      let updatedDateBookings = null
+      if (!showRejected) {
+        updatedDateBookings = dateBookings?.filter((b) => b.id !== bookingId)
+      } else {
+        updatedDateBookings = dateBookings?.map((b) => (b.id === bookingId ? { ...b, is_confirmed: false } : b))
+      }
+      updatedDateBookings && setDateBookings(updatedDateBookings)
 
       // If not showing rejected, refetch to remove it from view
       if (!showRejected) {
