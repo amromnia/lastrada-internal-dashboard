@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -14,18 +14,23 @@ import { BookingList } from "@/components/booking-list"
 import { UsersModal } from "@/components/users-modal"
 import { SearchModal } from "@/components/search-modal"
 import type { Booking } from "@/types/booking"
+import { CreateBookingDialog } from "@/components/create-booking-dialog"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [dateBookings, setDateBookings] = useState<Booking[] | null>(null)
   const [showRejected, setShowRejected] = useState(false)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true)
   const [refetching, setRefetching] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const detailsRef = useRef<HTMLDivElement>(null)
+
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -173,7 +178,7 @@ export default function DashboardPage() {
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
-
+      
       let updatedDateBookings = null
       if (!showRejected) {
         updatedDateBookings = dateBookings?.filter((b) => b.id !== bookingId)
@@ -192,6 +197,12 @@ export default function DashboardPage() {
       setActionLoading(false)
     }
   }
+
+  const handleBookingCreated = (newBooking: Booking) => {
+    console.log("🚀 ~ handleBookingCreated ~ newBooking:", newBooking)
+    setBookings([...bookings, newBooking]);
+    setSelectedBooking(newBooking);
+  };
 
   if (loading) {
     return (
@@ -227,6 +238,7 @@ export default function DashboardPage() {
                 scrollToDetails()
               }} />
               <UsersModal />
+
               <Button variant="outline" onClick={handleLogout}>
                 Sign Out
               </Button>
@@ -236,7 +248,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
+        <div className="flex flex-row items-center justify-between mb-6">
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border w-fit">
             <Switch
               id="show-rejected"
@@ -251,6 +263,10 @@ export default function DashboardPage() {
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
+          <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            {!isMobile && "New Booking"}
+          </Button>
         </div>
 
         <div className="relative">
@@ -308,6 +324,11 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      <CreateBookingDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onBookingCreated={handleBookingCreated}
+      />
     </div>
   )
 }
