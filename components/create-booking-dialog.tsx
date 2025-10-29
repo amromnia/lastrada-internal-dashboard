@@ -4,44 +4,14 @@ import { PackageSelectionStep } from './package-selection-step';
 import { BookingDetailsStep } from './booking-details-step';
 import { BookingConfirmation } from './booking-confirmation';
 import { Booking } from '@/types/booking';
+import { PackageData } from '@/types/packageData';
+import { BookingData } from '@/types/bookingData';
 
 interface CreateBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBookingCreated: (booking: any) => void;
 }
-
-export type PackageType = 'full experience' | 'live setup';
-
-export type PackageTypeDB = {
-  id: number;
-  name: PackageType
-};
-
-export interface PackageData {
-  packageType: PackageTypeDB;
-  guests?: number;
-  classicPizzas?: number;
-  signaturePizzas?: number;
-  subtotal: number;
-}
-
-export interface BookingData {
-  fullName: string;
-  phone: string;
-  eventDate: string;
-  servingTime: Date;
-  readyTime: Date;
-  address: string;
-  location: string;
-  area: string;
-  eventType: string;
-  allowFilming: boolean;
-  email: string;
-  comment?: string;
-  downpaymentUrl?: string;
-}
-
 
 export function CreateBookingDialog({ open, onOpenChange, onBookingCreated }: CreateBookingDialogProps) {
   const [step, setStep] = useState<'package' | 'details' | 'confirmation'>('package');
@@ -103,9 +73,8 @@ export function CreateBookingDialog({ open, onOpenChange, onBookingCreated }: Cr
     onOpenChange(false);
   };
 
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-full max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>

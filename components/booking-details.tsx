@@ -4,20 +4,22 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, XCircle, ArrowLeft } from "lucide-react"
+import { CheckCircle2, XCircle, ArrowLeft, Edit } from "lucide-react"
 import { ImageModal } from "@/components/image-modal"
-import { formatTimeToAMPM } from "@/lib/utils"
+import { formatMoney, formatTimeToAMPM } from "@/lib/utils"
 import type { Booking } from "@/types/booking"
+import { TActionLoading } from "@/app/dashboard/page"
 
 interface BookingDetailsProps {
   booking: Booking
   onConfirm: () => void
+  onEdit: () => void
   onDeny: () => void
   onBack?: () => void
-  isLoading?: boolean
+  isLoading?: TActionLoading
 }
 
-export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading = false }: BookingDetailsProps) {
+export function BookingDetails({ booking, onConfirm, onEdit, onDeny, onBack, isLoading = 'idle' }: BookingDetailsProps) {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const eventDate = new Date(booking.event_date)
   const formattedDate = eventDate.toLocaleDateString("en-US", {
@@ -33,9 +35,9 @@ export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading =
         <div className="flex items-start justify-between">
           <div className="flex-1">
             {onBack && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onBack}
                 className="mb-2 -ml-2"
               >
@@ -43,23 +45,26 @@ export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading =
                 Back to list
               </Button>
             )}
-            <CardTitle>{booking.full_name}</CardTitle>
+            <div className="flex gap-2 item-center justify-start">
+              <CardTitle>{booking.full_name}</CardTitle>
+              {booking.is_confirmed !== false && <Edit size={15} className="cursor-pointer hover:opacity-70 transition-opacity duration-300" onClick={onEdit} />}
+            </div>
             <CardDescription>{formattedDate}</CardDescription>
           </div>
-          <Badge 
+          <Badge
             variant={
-              booking.is_confirmed === true 
-                ? "default" 
-                : booking.is_confirmed === false 
-                ? "destructive" 
-                : "secondary"
+              booking.is_confirmed === true
+                ? "success"
+                : booking.is_confirmed === false
+                  ? "destructive"
+                  : "secondary"
             }
           >
-            {booking.is_confirmed === true 
-              ? "Confirmed" 
-              : booking.is_confirmed === false 
-              ? "Rejected" 
-              : "Pending"}
+            {booking.is_confirmed === true
+              ? "Confirmed"
+              : booking.is_confirmed === false
+                ? "Rejected"
+                : "Pending"}
           </Badge>
         </div>
       </CardHeader>
@@ -124,7 +129,7 @@ export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading =
                       {pkg.num_guests && <span>Guests: {pkg.num_guests}</span>}
                       {pkg.num_classic_pizzas && <span>Classic Pizzas: {pkg.num_classic_pizzas}</span>}
                       {pkg.num_signature_pizzas && <span>Signature Pizzas: {pkg.num_signature_pizzas}</span>}
-                      <span className="col-span-2 font-semibold text-foreground">Subtotal: {pkg.sub_total} EGP</span>
+                      <span className="col-span-2 font-semibold text-foreground">Subtotal: {formatMoney(pkg.sub_total)}</span>
                     </div>
                   </div>
                 ))}
@@ -139,12 +144,12 @@ export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading =
           )}
           <div>
             <p className="text-sm text-muted-foreground">Downpayment Screenshot</p>
-            <button 
+            {booking.downpayment_screenshot ? <button
               onClick={() => setIsImageModalOpen(true)}
               className="text-sm font-medium text-primary hover:underline cursor-pointer"
             >
               View Screenshot
-            </button>
+            </button> : <p className="text-sm font-medium text-primary">No Screenshot</p>}
           </div>
         </div>
 
@@ -157,13 +162,13 @@ export function BookingDetails({ booking, onConfirm, onDeny, onBack, isLoading =
 
         {booking.is_confirmed === null && (
           <div className="flex gap-2 pt-4">
-            <Button onClick={onConfirm} className="flex-1" size="sm" disabled={isLoading}>
+            <Button onClick={onConfirm} className="flex-1" size="sm" disabled={isLoading !== 'idle'}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              {isLoading ? "Confirming..." : "Confirm"}
+              {isLoading === 'confirm' ? "Confirming..." : "Confirm"}
             </Button>
-            <Button onClick={onDeny} variant="destructive" className="flex-1" size="sm" disabled={isLoading}>
+            <Button onClick={onDeny} variant="destructive" className="flex-1" size="sm" disabled={isLoading !== 'idle'}>
               <XCircle className="w-4 h-4 mr-2" />
-              {isLoading ? "Rejecting..." : "Deny"}
+              {isLoading === 'deny' ? "Rejecting..." : "Deny"}
             </Button>
           </div>
         )}

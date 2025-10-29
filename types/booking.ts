@@ -33,8 +33,10 @@ export interface Booking {
     num_guests: number | null
     num_classic_pizzas: number | null
     num_signature_pizzas: number | null
+    package_id: number
     sub_total: number
     packages: {
+      id: number
       name: string
     }
   }>

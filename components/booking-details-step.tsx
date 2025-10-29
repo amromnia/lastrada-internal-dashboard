@@ -6,10 +6,12 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import type { PackageData, BookingData } from './create-booking-dialog';
+import { BookingData } from '@/types/bookingData';
+import { PackageData } from '@/types/packageData';
 
 interface BookingDetailsStepProps {
   packageData: PackageData;
+  bookingData?: BookingData;
   onSubmit: (data: BookingData) => void;
   onBack: (packageData: PackageData) => void;
   submitting?: boolean;
@@ -19,10 +21,10 @@ const today = new Date();
 const tomorrow = new Date(today);
 tomorrow.setDate(today.getDate() + 1);
 
-export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting = false }: BookingDetailsStepProps) {
-  const [selectedArea, setSelectedArea] = useState('');
-  const [selectedEventType, setSelectedEventType] = useState('');
-  const [allowFilming, setAllowFilming] = useState(false);
+export function BookingDetailsStep({ packageData, bookingData, onSubmit, onBack, submitting = false }: BookingDetailsStepProps) {
+  const [selectedArea, setSelectedArea] = useState(bookingData ? bookingData.area : '');
+  const [selectedEventType, setSelectedEventType] = useState(bookingData ? bookingData.eventType : '');
+  const [allowFilming, setAllowFilming] = useState(bookingData ? bookingData.allowFilming : false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [areas, setAreas] = useState<{ id: number; name: string }[]>([]);
   const [eventTypes, setEventTypes] = useState<{ id: number; name: string }[]>([]);
@@ -98,12 +100,12 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
       return;
     }
 
-    if (!allowFilming) {
+    if (allowFilming !== true && allowFilming !== false) {
       alert('Please select allow filming option');
       return;
     }
 
-    let downpaymentUrl = null;
+    let downpaymentUrl = bookingData?.downpaymentUrl || null;
     if (imageFile) {
       downpaymentUrl = await uploadDownpayment(imageFile);
       if (!downpaymentUrl) {
@@ -128,7 +130,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
           <Label htmlFor="fullName">Full Name *</Label>
           <Input
             id="fullName"
-            {...register('fullName', { required: 'Full name is required' })}
+            {...register('fullName', { required: 'Full name is required', value: bookingData?.fullName ?? '' })}
             className="mt-2 text-sm"
           />
           {errors.fullName && (
@@ -141,7 +143,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
           <Input
             id="phone"
             type="tel"
-            {...register('phone', { required: 'Phone number is required' })}
+            {...register('phone', { required: 'Phone number is required', value: bookingData?.phone ?? '' })}
             className="mt-2 text-sm"
           />
           {errors.phone && (
@@ -157,6 +159,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
           type="email"
           {...register('email', {
             required: 'Email is required',
+            value: bookingData?.email ?? '',
             pattern: {
               value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
               message: 'Invalid email address'
@@ -174,8 +177,8 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
         <Input
           id="eventDate"
           type="date"
-          min={tomorrow?.toISOString().split("T")[0] || new Date()?.toISOString().split("T")[0]}
-          {...register('eventDate', { required: 'Event date is required' })}
+          min={bookingData?.eventDate ?? (tomorrow?.toISOString().split("T")[0] || new Date()?.toISOString().split("T")[0])}
+          {...register('eventDate', { required: 'Event date is required', value: bookingData?.eventDate ?? '' })}
           className="mt-2 text-sm"
         />
         {errors.eventDate && (
@@ -190,7 +193,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
             id="readyTime"
             type="time"
             step="1"
-            {...register('readyTime', { required: 'Ready time is required' })}
+            {...register('readyTime', { required: 'Ready time is required', value: bookingData?.readyTime ?? '' })}
             className="mt-2 text-sm"
           />
           {errors.readyTime && (
@@ -204,7 +207,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
             id="servingTime"
             type="time"
             step="1"
-            {...register('servingTime', { required: 'Serving time is required' })}
+            {...register('servingTime', { required: 'Serving time is required', value: bookingData?.servingTime ?? '' })}
             className="mt-2 text-sm"
           />
           {errors.servingTime && (
@@ -217,7 +220,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
         <Label htmlFor="address">Address *</Label>
         <Input
           id="address"
-          {...register('address', { required: 'Address is required' })}
+          {...register('address', { required: 'Address is required', value: bookingData?.address ?? '' })}
           className="mt-2 text-sm"
         />
         {errors.address && (
@@ -229,7 +232,7 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
         <Label htmlFor="location">Location *</Label>
         <Input
           id="location"
-          {...register('location', { required: 'Location is required' })}
+          {...register('location', { required: 'Location is required', value: bookingData?.location ?? '' })}
           className="mt-2 text-sm"
         />
         {errors.location && (
@@ -281,7 +284,10 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
         <Checkbox
           id="filming"
           checked={allowFilming}
-          onCheckedChange={(checked) => setAllowFilming(checked as boolean)}
+          onCheckedChange={(checked) => {
+            console.log("🚀 ~ BookingDetailsStep ~ checked:", checked)
+            setAllowFilming(checked as boolean)
+          }}
         />
         <Label htmlFor="filming" className="cursor-pointer">
           Allow filming during the event
@@ -292,33 +298,34 @@ export function BookingDetailsStep({ packageData, onSubmit, onBack, submitting =
         <Label htmlFor="comment">Comment (Optional)</Label>
         <Textarea
           id="comment"
-          {...register('comment')}
+          {...register('comment', { value: bookingData?.comment ?? '' })}
           className="mt-2 text-sm"
           rows={3}
           placeholder="Any special requests or notes..."
         />
       </div>
 
-      <div>
+      {!bookingData?.downpaymentUrl && <div>
         <Label htmlFor="downpayment">Downpayment Screenshot (Optional)</Label>
+        <p className='text-xs text-red-700 italic mt-1'>*please note that once an image is uploaded, it cannot be removed or replaced*</p>
         <Input
           id="downpayment"
           type="file"
-          accept="image/*"
+          accept="image/jpeg, image/png, image/jpg"
           onChange={(e) => setImageFile(e.target.files?.[0] || null)}
           className="mt-2 "
         />
         {imageFile && (
           <p className="mt-1 text-gray-600 break-all">Selected: {imageFile.name}</p>
         )}
-      </div>
+      </div>}
 
       <div className="flex justify-between pt-4">
         <Button type="button" variant="outline" onClick={() => onBack(packageData)} disabled={uploading || submitting}>
           Back
         </Button>
         <Button type="submit" disabled={uploading || submitting}>
-          {uploading ? 'Uploading...' : submitting ? 'Creating Booking...' : 'Submit Booking'}
+          {uploading ? 'Uploading...' : submitting ? 'finalizing...' : 'Submit'}
         </Button>
       </div>
     </form>

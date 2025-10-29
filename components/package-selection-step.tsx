@@ -3,9 +3,10 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Input } from './ui/input';
-import type { PackageData, PackageTypeDB } from './create-booking-dialog';
 import { formatMoney } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { PackageData } from '@/types/packageData';
+import { PackageTypeDB } from '@/types/packageTypeDB';
 
 interface PackageSelectionStepProps {
   packageData?: PackageData | null;
@@ -37,10 +38,10 @@ export function calculateSubtotal(
 
 export function PackageSelectionStep({ packageData, onSubmit }: PackageSelectionStepProps) {
   const [packages, setPackages] = useState<PackageTypeDB[]>([]);
-  const [packageType, setPackageType] = useState<PackageTypeDB | null>(packageData?.packageType ? packageData.packageType : null);
-  const [guests, setGuests] = useState(packageData?.guests ? packageData.guests : 10);
-  const [classicPizzas, setClassicPizzas] = useState<number>(packageData?.classicPizzas ? packageData.classicPizzas : 0);
-  const [signaturePizzas, setSignaturePizzas] = useState<number>(packageData?.signaturePizzas ? packageData.signaturePizzas : 20);
+  const [packageType, setPackageType] = useState<PackageTypeDB | null>(packageData ? packageData.packageType : null);
+  const [guests, setGuests] = useState(packageData?.guests ? packageData.guests  : 10);
+  const [classicPizzas, setClassicPizzas] = useState<number>(packageData ? packageData?.classicPizzas ?? 0 : 0);
+  const [signaturePizzas, setSignaturePizzas] = useState<number>(packageData ? packageData.signaturePizzas ?? 0 : 20);
   const [error, setError] = useState('');
   const [state, setState] = useState<'loading' | 'idle'>('idle');
 
