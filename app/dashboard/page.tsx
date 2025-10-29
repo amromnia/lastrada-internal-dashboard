@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -14,18 +14,27 @@ import { BookingList } from "@/components/booking-list"
 import { UsersModal } from "@/components/users-modal"
 import { SearchModal } from "@/components/search-modal"
 import type { Booking } from "@/types/booking"
+import { CreateBookingDialog } from "@/components/create-booking-dialog"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { EditBookingDialog } from "@/components/edit-booking-dialog"
+
+export type TActionLoading = 'idle' | 'confirm' | 'deny'
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [dateBookings, setDateBookings] = useState<Booking[] | null>(null)
   const [showRejected, setShowRejected] = useState(false)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true)
   const [refetching, setRefetching] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState<TActionLoading>('idle')
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const detailsRef = useRef<HTMLDivElement>(null)
+
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -120,19 +129,23 @@ export default function DashboardPage() {
   }
 
   const handleConfirmBooking = async (bookingId: string | number) => {
-    setActionLoading(true)
+    setActionLoading('confirm')
     try {
       const response = await fetch(`/api/bookings/${bookingId}/confirm`, { method: "POST" })
       if (!response.ok) throw new Error("Failed to confirm booking")
 
       const updatedBookings = bookings.map((b) => (b.id === bookingId ? { ...b, is_confirmed: true } : b))
       setBookings(updatedBookings)
-      
+
       // Re-select the updated booking
       const updatedBooking = updatedBookings.find((b) => b.id === bookingId)
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
+
+
+      const updatedDateBookings = dateBookings?.map((b) => (b.id === bookingId ? { ...b, is_confirmed: true } : b))
+      updatedDateBookings && setDateBookings(updatedDateBookings)
 
       // Send confirmation email
       try {
@@ -141,7 +154,7 @@ export default function DashboardPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bookingId }),
         })
-        
+
         if (!emailResponse.ok) {
           console.error("Failed to send confirmation email")
         }
@@ -151,25 +164,33 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Error confirming booking:", err)
     } finally {
-      setActionLoading(false)
+      setActionLoading('idle')
     }
   }
 
   const handleDenyBooking = async (bookingId: string | number) => {
-    setActionLoading(true)
+    setActionLoading('deny')
     try {
       const response = await fetch(`/api/bookings/${bookingId}/deny`, { method: "POST" })
       if (!response.ok) throw new Error("Failed to deny booking")
 
       const updatedBookings = bookings.map((b) => (b.id === bookingId ? { ...b, is_confirmed: false } : b))
       setBookings(updatedBookings)
-      
+
       // Re-select the updated booking
       const updatedBooking = updatedBookings.find((b) => b.id === bookingId)
       if (updatedBooking) {
         setSelectedBooking(updatedBooking)
       }
       
+      let updatedDateBookings = null
+      if (!showRejected) {
+        updatedDateBookings = dateBookings?.filter((b) => b.id !== bookingId)
+      } else {
+        updatedDateBookings = dateBookings?.map((b) => (b.id === bookingId ? { ...b, is_confirmed: false } : b))
+      }
+      updatedDateBookings && setDateBookings(updatedDateBookings)
+
       // If not showing rejected, refetch to remove it from view
       if (!showRejected) {
         setTimeout(() => fetchBookings(true), 500)
@@ -177,9 +198,23 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Error denying booking:", err)
     } finally {
-      setActionLoading(false)
+      setActionLoading('idle')
     }
   }
+
+  const handleBookingCreated = (newBooking: Booking) => {
+    console.log("🚀 ~ handleBookingCreated ~ newBooking:", newBooking)
+    setBookings([...bookings, newBooking]);
+    setSelectedBooking(newBooking);
+  };
+
+  const toggleEditBookingDialog = () => setEditDialogOpen((prev) => !prev);
+
+  const handleBookingEdited = (editedBooking: Booking) => {
+    console.log("🚀 ~ handleBookingEdited ~ editedBooking:", editedBooking)
+    setBookings((prev) => prev.map((booking) => (booking.id === editedBooking.id ? editedBooking : booking)));
+    setSelectedBooking(editedBooking);
+  };
 
   if (loading) {
     return (
@@ -195,10 +230,10 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Image 
-                src="/logo.png" 
-                alt="Lastrada Logo" 
-                width={48} 
+              <Image
+                src="/logo.png"
+                alt="Lastrada Logo"
+                width={48}
                 height={48}
                 className="object-contain"
                 priority
@@ -215,6 +250,7 @@ export default function DashboardPage() {
                 scrollToDetails()
               }} />
               <UsersModal />
+
               <Button variant="outline" onClick={handleLogout}>
                 Sign Out
               </Button>
@@ -224,7 +260,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
+        <div className="flex flex-row items-center justify-between mb-6">
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border w-fit">
             <Switch
               id="show-rejected"
@@ -239,6 +275,10 @@ export default function DashboardPage() {
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
+          <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            {!isMobile && "New Booking"}
+          </Button>
         </div>
 
         <div className="relative">
@@ -251,51 +291,58 @@ export default function DashboardPage() {
             </div>
           )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Calendar</CardTitle>
-                <CardDescription>Click on a date to view bookings for that day</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BookingCalendar 
-                  bookings={bookings} 
-                  onSelectBooking={handleSelectBooking}
-                  onSelectDate={handleSelectDate}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          <div ref={detailsRef}>
-            {selectedBooking ? (
-              <BookingDetails
-                booking={selectedBooking}
-                onConfirm={() => handleConfirmBooking(selectedBooking.id)}
-                onDeny={() => handleDenyBooking(selectedBooking.id)}
-                onBack={dateBookings ? handleBack : undefined}
-                isLoading={actionLoading}
-              />
-            ) : dateBookings ? (
-              <BookingList 
-                bookings={dateBookings}
-                onSelectBooking={handleSelectBooking}
-              />
-            ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Booking Details</CardTitle>
+                  <CardTitle>Booking Calendar</CardTitle>
+                  <CardDescription>Click on a date to view bookings for that day</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Select a booking from the calendar to view details</p>
+                  <BookingCalendar
+                    bookings={bookings}
+                    onSelectBooking={handleSelectBooking}
+                    onSelectDate={handleSelectDate}
+                  />
                 </CardContent>
               </Card>
-            )}
+            </div>
+
+            <div ref={detailsRef}>
+              {selectedBooking ? (
+                <BookingDetails
+                  booking={selectedBooking}
+                  onConfirm={() => handleConfirmBooking(selectedBooking.id)}
+                  onEdit={toggleEditBookingDialog}
+                  onDeny={() => handleDenyBooking(selectedBooking.id)}
+                  onBack={dateBookings ? handleBack : undefined}
+                  isLoading={actionLoading}
+                />
+              ) : dateBookings ? (
+                <BookingList
+                  bookings={dateBookings}
+                  onSelectBooking={handleSelectBooking}
+                />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Booking Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Select a booking from the calendar to view details</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
-        </div>
       </div>
+      <CreateBookingDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onBookingCreated={handleBookingCreated}
+      />
+      {selectedBooking && <EditBookingDialog bookingId={selectedBooking.id} open={editDialogOpen} onOpenChange={toggleEditBookingDialog} onBookingEdited={handleBookingEdited} bookingData={selectedBooking} />}
     </div>
   )
 }

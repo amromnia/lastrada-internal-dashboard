@@ -15,8 +15,8 @@ export interface Booking {
   downpayment_screenshot: string
   area_id: number
   event_type_id: number
-  area: string | null
-  event_type: string | null
+  area?: string | null
+  event_type?: string | null
   reference_number: string
   created_at: string
   // Related data
@@ -33,8 +33,10 @@ export interface Booking {
     num_guests: number | null
     num_classic_pizzas: number | null
     num_signature_pizzas: number | null
+    package_id: number
     sub_total: number
     packages: {
+      id: number
       name: string
     }
   }>

@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+	return twMerge(clsx(inputs))
 }
 
 /**
@@ -11,15 +11,17 @@ export function cn(...inputs: ClassValue[]) {
  * @returns Time string in 12-hour format with AM/PM
  */
 export function formatTimeToAMPM(time: string): string {
-  // Handle cases where time might include seconds
-  const [hoursStr, minutesStr] = time.split(':')
-  const hours = parseInt(hoursStr, 10)
-  const minutes = minutesStr || '00'
-  
-  if (isNaN(hours)) return time // Return original if invalid
-  
-  const period = hours >= 12 ? 'PM' : 'AM'
-  const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
-  
-  return `${displayHours}:${minutes} ${period}`
+	// Handle cases where time might include seconds
+	const [hoursStr, minutesStr] = time.split(':')
+	const hours = parseInt(hoursStr, 10)
+	const minutes = minutesStr || '00'
+
+	if (isNaN(hours)) return time // Return original if invalid
+
+	const period = hours >= 12 ? 'PM' : 'AM'
+	const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+
+	return `${displayHours}:${minutes} ${period}`
 }
+
+export function formatMoney(number: number): string { return Intl.NumberFormat('en-US', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(number) }
